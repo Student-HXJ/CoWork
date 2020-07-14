@@ -1,51 +1,70 @@
+import time
 import numpy as np
 from sklearn.svm import SVC
 from sklearn.feature_selection import RFE
-from sklearn.model_selection import LeaveOneOut
-from data import data1set, data2set, labels, plotroc, getacc
+from sklearn.metrics import accuracy_score
+from sklearn.model_selection import cross_val_score, KFold
+from datautils import data1set, labels, plotroc
 
 
-def RFEprocess(model, X_train, y_tarin, X_test, features):
-    X_train = X_train.astype(np.float64)
-    X_test = X_test.astype(np.float64)
-    selector = RFE(model, features, step=1)
-    selector = selector.fit(X_train, y_train)
-    summary = np.zeros(sum(selector.support_)).tolist()
-    j = 0
-    k = 0
-    for i in selector.support_:
-        j = j + 1
-        if i:
-            summary[k] = j - 1
-            k = k + 1
-    X_train = X_train[:, summary]
-    X_test = X_test[:, summary]
-    return X_train, X_test
+class RFEtrain:
+
+    def __init__(self, dataset, label):
+
+        # model
+        self.model = SVC(C=1, kernel="linear")
+        # dataset
+        self.dataset = dataset
+        self.labels = label
+
+    def RFEprocess(self, features):
+        selector = RFE(self.model, n_features_to_select=features)
+        selector = selector.fit(self.dataset, self.labels)
+        summary = np.zeros(sum(selector.support_)).tolist()
+        j = 0
+        k = 0
+        for i in selector.support_:
+            j = j + 1
+            if i:
+                summary[k] = j - 1
+                k = k + 1
+        data = self.dataset[:, summary]
+        return summary, data
+
+    def feature_select(self):
+        for i in range(1, 101, 1):
+            start = time.time()
+            idx, RFEdata = self.RFEprocess(i)
+            acc = cross_val_score(self.model, RFEdata, self.labels, cv=10, scoring='accuracy').mean()
+            end = time.time()
+            print("time: {:.2f}s, featurenum: {:d}, acc: {:.4f}".format(end - start, i, acc))
+
+    def cross_validation(self):
+        kf = KFold(n_splits=49)
+        idx, RFEdata = self.RFEprocess(10)
+
+        labelset = []
+        scoreset = []
+        predset = []
+        for train, test in kf.split(RFEdata):
+            trainset = RFEdata[train]
+            trainlabel = labels[train]
+            testset = RFEdata[test]
+            testlabel = labels[test]
+
+            self.model.fit(trainset, trainlabel)
+            score = self.model.decision_function(testset)
+            pred = self.model.predict(testset)
+
+            labelset.append(testlabel[0])
+            scoreset.append(score[0])
+            predset.append(pred[0])
+
+        acc = accuracy_score(labelset, predset)
+        print(acc)
+        plotroc(labelset, scoreset)
+        print("done!")
 
 
-model1 = SVC(C=1, kernel="linear", probability=True)
-lo = LeaveOneOut()
-lo.get_n_splits(data2set)
-
-testlabelList = []
-testpredList = []
-testscoreList = []
-for train_idx, test_idx in lo.split(data2set):
-
-    X_train = data2set[train_idx]
-    X_test = data2set[test_idx]
-    y_train = labels[train_idx]
-    y_test = labels[test_idx]
-
-    # RFE processing extract the feature
-    RFEtrain_data, RFEtest_data = RFEprocess(model1, X_train, y_train, X_test, 100)
-    model1.fit(RFEtrain_data, y_train)
-    testpred = model1.predict(RFEtest_data)
-    testscore = model1.decision_function(RFEtest_data)
-
-    testpredList.append(testpred[0])
-    testlabelList.append(y_test[0])
-    testscoreList.append(testscore[0])
-
-getacc(testlabelList, testpredList)
-plotroc(testlabelList, testscoreList)
+if __name__ == "__main__":
+    RFEtrain(data1set, labels).feature_select()

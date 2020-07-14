@@ -1,41 +1,22 @@
 import numpy as np
 import csv
+import re
 import matplotlib.pyplot as plt
-from sklearn.metrics import roc_curve, auc, accuracy_score
-
-data1path = "/Users/hxj/Desktop/data1.csv"
-data2path = "/Users/hxj/Desktop/data2.csv"
-labelpath = "/Users/hxj/Desktop/label.csv"
-with open(labelpath, 'r') as f3:
-    labelreader = csv.reader(f3)
-    labels = []
-    for label in labelreader:
-        label = int(label[0])
-        if label == -1:
-            labels.append(0)
-        else:
-            labels.append(1)
-
-with open(data2path, 'r') as f2:
-    data2reader = csv.reader(f2)
-    data2set = []
-    for data in data2reader:
-        data2set.append(data)
-
-with open(data1path, 'r') as f1:
-    data1reader = csv.reader(f1)
-    data1set = []
-    for data in data1reader:
-        data1set.append(data)
-
-data1set = np.array(data1set)
-data2set = np.array(data2set)
-labels = np.array(labels, dtype=int)
+from sklearn.metrics import roc_curve, auc
 
 
-def getacc(labelList, predList):
-    acc = accuracy_score(labelList, predList)
-    print(acc)
+def getdata(path):
+    with open(path, 'r') as f1:
+        reader = csv.reader(f1)
+        dataset = []
+        for data in reader:
+            dataset.append(data)
+    return dataset
+
+
+data1set = np.array(getdata("./dataset/data1.csv"), dtype=float)
+data2set = np.array(getdata("./dataset/data2.csv"), dtype=float)
+labels = np.array(getdata("./dataset/label.csv"), dtype=int).reshape(-1)
 
 
 def plotroc(labelList, scoreList):
@@ -49,4 +30,40 @@ def plotroc(labelList, scoreList):
     plt.xlabel("False positive rate")
     plt.ylabel("True positive rate")
     plt.legend(loc="lower right")
-    plt.show()
+    plt.savefig("./log/test.jpg")
+
+
+def plotresult(resultpath):
+    featurenums = []
+    accscore = []
+
+    with open(resultpath, 'r') as f:
+        for i in f:
+            a = re.findall("\d+", i)
+            b = re.findall("\d+\.\d+", i)
+            featurenums.append(int(a[2]))
+            accscore.append(float(b[1]))
+
+    featurenums = np.array(featurenums)
+    accscore = np.array(accscore)
+
+    print(accscore.max())
+    plt.plot(featurenums, accscore)
+    plt.title("dataset2")
+    plt.xlabel("features")
+    plt.ylabel("acc")
+    plt.savefig("./log/result.jpg", bbox_inches='tight', dpi=300)
+
+
+def getdata1pos(idxList):
+    pos = []
+    for item in idxList:
+        sum = 0
+        for i in range(1, 117):
+            sum += i
+            if sum >= item:
+                x = i
+                y = i - 1 - (sum - item)
+                break
+        pos.append([x, y])
+    return pos

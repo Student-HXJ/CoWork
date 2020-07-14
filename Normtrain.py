@@ -1,6 +1,6 @@
 from sklearn.svm import SVC
 from sklearn.model_selection import LeaveOneOut
-from data import data1set, data2set, labels, plotroc, getacc
+from datautils import data1set, data2set, labels, plotroc
 
 model1 = SVC(C=1, kernel='linear')
 lo = LeaveOneOut()
@@ -27,5 +27,4 @@ for train_idx, test_idx in lo.split(data2set):
     testpredList.append(testpred[0])
     testscoreList.append(testscore[0])
 
-getacc(testlabelList, testpredList)
 plotroc(testlabelList, testscoreList)

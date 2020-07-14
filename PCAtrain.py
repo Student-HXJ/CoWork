@@ -2,7 +2,7 @@ import numpy as np
 from sklearn.svm import SVC
 from sklearn.decomposition import PCA
 from sklearn.model_selection import LeaveOneOut
-from data import data1set, data2set, labels, plotroc, getacc
+from datautils import data1set, data2set, labels, plotroc
 
 
 def PCAprocess(X_train, X_test):
@@ -38,5 +38,4 @@ for train_idx, test_idx in lo.split(data2set):
     testlabelList.append(y_test[0])
     testscoreList.append(testscore[0])
 
-getacc(testlabelList, testpredList)
 plotroc(testlabelList, testscoreList)
