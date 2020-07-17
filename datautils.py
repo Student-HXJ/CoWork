@@ -19,7 +19,7 @@ data2set = np.array(getdata("./dataset/data2.csv"), dtype=float)
 labels = np.array(getdata("./dataset/label.csv"), dtype=int).reshape(-1)
 
 
-def plotroc(labelList, scoreList):
+def plotroc(labelList, scoreList, acc):
     fpr, tpr, thresholds = roc_curve(labelList, scoreList)
     roc_auc = auc(fpr, tpr)
     plt.plot(fpr, tpr, lw=1, label="area = {0:.2f}".format(roc_auc))
@@ -27,13 +27,14 @@ def plotroc(labelList, scoreList):
     plt.plot([0, 1], [0, 1], linestyle='--', lw=1, color='r', alpha=0.8)
     plt.xlim([0., 1.])
     plt.ylim([0., 1.])
+    plt.title(label="cross validation acc :{:.2f}".format(acc))
     plt.xlabel("False positive rate")
     plt.ylabel("True positive rate")
     plt.legend(loc="lower right")
     plt.savefig("./log/test.jpg")
 
 
-def plotresult(resultpath):
+def plot_feature_acc(resultpath, savepath):
     featurenums = []
     accscore = []
 
@@ -49,13 +50,13 @@ def plotresult(resultpath):
 
     print(accscore.max())
     plt.plot(featurenums, accscore)
-    plt.title("dataset2")
+    plt.title("dataset")
     plt.xlabel("features")
     plt.ylabel("acc")
-    plt.savefig("./log/result.jpg", bbox_inches='tight', dpi=300)
+    plt.savefig(savepath, bbox_inches='tight', dpi=300)
 
 
-def getdata1pos(idxList):
+def data1pos(idxList):
     pos = []
     for item in idxList:
         sum = 0

@@ -3,8 +3,9 @@ import numpy as np
 from sklearn.svm import SVC
 from sklearn.feature_selection import RFE
 from sklearn.metrics import accuracy_score
-from sklearn.model_selection import cross_val_score, KFold
-from datautils import data1set, labels, plotroc
+from sklearn.model_selection import KFold
+from datautils import data1set, labels
+from joblib import Parallel, delayed
 
 
 class RFEtrain:
@@ -16,10 +17,12 @@ class RFEtrain:
         # dataset
         self.dataset = dataset
         self.labels = label
+        self.samples = dataset.shape[0]
 
-    def RFEprocess(self, features):
+    def RFEprocess(self, data, label, train_idx, test_idx, features):
         selector = RFE(self.model, n_features_to_select=features)
-        selector = selector.fit(self.dataset, self.labels)
+        selector = selector.fit(data[train_idx], label[train_idx])
+
         summary = np.zeros(sum(selector.support_)).tolist()
         j = 0
         k = 0
@@ -28,42 +31,30 @@ class RFEtrain:
             if i:
                 summary[k] = j - 1
                 k = k + 1
-        data = self.dataset[:, summary]
-        return summary, data
+
+        self.model.fit(data[train_idx][:, summary], label[train_idx])
+        pred = self.model.predict(data[test_idx][:, summary])
+        acc = accuracy_score(label[test_idx], pred)
+
+        return acc
+
+    def cross_validation(self, features):
+        acc = Parallel(16)(delayed(self.RFEprocess)(
+            self.dataset,
+            self.labels,
+            train_idx,
+            test_idx,
+            features,
+        ) for train_idx, test_idx in KFold(n_splits=self.samples).split(self.dataset))
+        acc = np.sum(acc) / self.samples
+        return acc
 
     def feature_select(self):
-        for i in range(1, 101, 1):
+        for i in range(1, self.dataset.shape[1] + 1, 1):
             start = time.time()
-            idx, RFEdata = self.RFEprocess(i)
-            acc = cross_val_score(self.model, RFEdata, self.labels, cv=10, scoring='accuracy').mean()
+            acc = self.cross_validation(i)
             end = time.time()
             print("time: {:.2f}s, featurenum: {:d}, acc: {:.4f}".format(end - start, i, acc))
-
-    def cross_validation(self):
-        kf = KFold(n_splits=49)
-        idx, RFEdata = self.RFEprocess(10)
-
-        labelset = []
-        scoreset = []
-        predset = []
-        for train, test in kf.split(RFEdata):
-            trainset = RFEdata[train]
-            trainlabel = labels[train]
-            testset = RFEdata[test]
-            testlabel = labels[test]
-
-            self.model.fit(trainset, trainlabel)
-            score = self.model.decision_function(testset)
-            pred = self.model.predict(testset)
-
-            labelset.append(testlabel[0])
-            scoreset.append(score[0])
-            predset.append(pred[0])
-
-        acc = accuracy_score(labelset, predset)
-        print(acc)
-        plotroc(labelset, scoreset)
-        print("done!")
 
 
 if __name__ == "__main__":
