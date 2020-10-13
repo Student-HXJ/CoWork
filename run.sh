@@ -5,7 +5,9 @@ if [ ${cmd} == "git" ]; then
 elif [ ${cmd} == "RFEtrain" ]; then
     nohup python3 -u RFEtrain.py >./log/result1.log 2>&1 &
 elif [ ${cmd} == "test" ]; then
-    nohup python3 -u test.py >./log/test1.log 2>&1 &
+    nohup python3 -u test.py >./log/test.log 2>&1 &
+elif [ ${cmd} == "svmnn" ]; then
+    nohup python3 -u svmnn.py >./log/rfe.log 2>&1 &
 else
     echo "No selection"
 fi

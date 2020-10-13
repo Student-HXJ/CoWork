@@ -1,23 +1,33 @@
-import time
-import numpy as np
-from sklearn.svm import SVC
-from sklearn.feature_selection import RFE
-from sklearn.metrics import accuracy_score
-from sklearn.model_selection import KFold
-from datautils import data1set, labels
-from joblib import Parallel, delayed
+import os
+import sys
+
+sys.path.append(os.getcwd())
+from datautils import *
 
 
 class RFEtrain:
 
-    def __init__(self, dataset, label):
+    def __init__(self, dataset, labels):
 
         # model
         self.model = SVC(C=1, kernel="linear")
         # dataset
         self.dataset = dataset
-        self.labels = label
+        self.labels = labels
         self.samples = dataset.shape[0]
+        self.features = dataset.shape[1]
+
+    def useRFECV(self, savepath):
+
+        rfecv = RFECV(estimator=self.model, step=1, cv=KFold(49), scoring='accuracy')
+        rfecv.fit(self.dataset, self.labels)
+
+        plt.xlabel("number of features selected")
+        plt.ylabel("Cross validation score")
+        plt.plot(range(1, len(rfecv.grid_scores_) + 1), rfecv.grid_scores_)
+        plt.savefig(savepath)
+        for i in range(len(rfecv.grid_scores_)):
+            print(i, rfecv.grid_scores_[i])
 
     def RFEprocess(self, data, label, train_idx, test_idx, features):
         selector = RFE(self.model, n_features_to_select=features)
@@ -33,29 +43,35 @@ class RFEtrain:
                 k = k + 1
 
         self.model.fit(data[train_idx][:, summary], label[train_idx])
+
         pred = self.model.predict(data[test_idx][:, summary])
+        score = self.model.decision_function(data[test_idx][:, summary])
         acc = accuracy_score(label[test_idx], pred)
 
-        return acc
+        result = np.array([acc, score, label[test_idx]])
+        return result
 
     def cross_validation(self, features):
-        acc = Parallel(16)(delayed(self.RFEprocess)(
+        result = Parallel(16)(delayed(self.RFEprocess)(
             self.dataset,
             self.labels,
             train_idx,
             test_idx,
             features,
         ) for train_idx, test_idx in KFold(n_splits=self.samples).split(self.dataset))
-        acc = np.sum(acc) / self.samples
+
+        acc = getacc(result)
+        # getroc(result)
         return acc
 
     def feature_select(self):
-        for i in range(1, self.dataset.shape[1] + 1, 1):
+        for i in range(100, self.features + 1, 5):
             start = time.time()
             acc = self.cross_validation(i)
             end = time.time()
-            print("time: {:.2f}s, featurenum: {:d}, acc: {:.4f}".format(end - start, i, acc))
+            print("time: {:.2f}s, featurenum: {:d}, acc: {:.2f}".format(end - start, i, acc))
 
 
 if __name__ == "__main__":
-    RFEtrain(data1set, labels).feature_select()
+    RFEtrain(data1set, labels).useRFECV("./log/result1.jpg")
+    # plot_feature_acc("./log/result1.log", "./log/result1.jpg")

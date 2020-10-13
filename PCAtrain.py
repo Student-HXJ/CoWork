@@ -1,8 +1,7 @@
-import numpy as np
-from sklearn.svm import SVC
-from sklearn.decomposition import PCA
-from sklearn.model_selection import LeaveOneOut
-from datautils import data1set, data2set, labels, plotroc
+import os
+import sys
+sys.path.append(os.getcwd())
+from datautils import *
 
 
 def PCAprocess(X_train, X_test):
@@ -21,7 +20,7 @@ lo.get_n_splits(data2set)
 testpredList = []
 testlabelList = []
 testscoreList = []
-for train_idx, test_idx in lo.split(data2set):
+for train_idx, test_idx in KFold(n_splits=49).split(data2set):
 
     X_train = data2set[train_idx]
     X_test = data2set[test_idx]
