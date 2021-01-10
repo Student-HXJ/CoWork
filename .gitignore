@@ -1,5 +1,3 @@
 .DS_Store
 .idea/
-./dataset
-./hjyc
-./log
+__pycache__/

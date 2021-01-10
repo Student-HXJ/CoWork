@@ -1,24 +1,16 @@
-import csv
 import re
 import os
-import time
-import random
 import numpy as np
 import tensorflow as tf
-from sklearn.svm import SVC
 import matplotlib.pyplot as plt
-from sklearn.metrics import roc_curve, auc, accuracy_score
-from sklearn.feature_selection import RFE, RFECV
-from sklearn.model_selection import KFold
-from joblib import Parallel, delayed
-from sklearn.decomposition import PCA
+from sklearn.metrics import roc_curve, auc
 
 
 def noiseadd(signal):
     SNR = 5
     noise = np.random.randn(signal.shape[0], signal.shape[1])
     noise = noise - np.mean(noise)
-    signal_power = np.linalg.norm(signal) ** 2 / signal.size
+    signal_power = np.linalg.norm(signal)**2 / signal.size
     noise_variance = signal_power / np.power(10, (SNR / 10))
     noise = (np.sqrt(noise_variance) / np.std(noise)) * noise
     signal_noise = noise + signal
@@ -105,15 +97,6 @@ def getroc(arr, savepath):
     plot_roc_auc(labelset, scoreset, savepath)
 
 
-def getdata(path):
-    with open(path, 'r') as f1:
-        reader = csv.reader(f1)
-        dataset = []
-        for data in reader:
-            dataset.append(data)
-    return dataset
-
-
 def negtozero(labels):
     tmp = []
     for item in labels:
@@ -122,8 +105,3 @@ def negtozero(labels):
         tmp.append(item)
     labels = np.array(tmp, dtype=int).reshape(-1)
     return labels
-
-
-data1set = np.array(getdata("./dataset/data1.csv"), dtype=float)
-data2set = np.array(getdata("./dataset/data2.csv"), dtype=float)
-labels = np.array(getdata("./dataset/label.csv"), dtype=int).reshape(-1)

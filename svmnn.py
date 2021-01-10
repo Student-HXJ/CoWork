@@ -1,13 +1,24 @@
 import os
-import sys
+import numpy as np
+import random
+import tensorflow as tf
+from CoWork.datautils import GPUs, negtozero
+from sklearn.svm import SVC
+from sklearn.feature_selection import RFE
+from sklearn.model_selection import KFold
 
-sys.path.append(os.getcwd())
-from datautils import *
-np.random.seed(2020)
-random.seed(2020)
-tf.random.set_seed((2020))
+np.random.seed(2021)
+random.seed(2021)
+tf.random.set_seed((2021))
 GPUs(0)
-savepath = "./log/roc.jpg"
+
+dirpath = os.getcwd()
+datapath = os.path.join(dirpath, 'CoWork', 'dataset', '75')
+data1set = np.load(os.path.join(datapath, 'data1.npy'))
+data2set = np.load(os.path.join(datapath, 'data2.npy'))
+labels = np.load(os.path.join(datapath, 'label.npy'))
+
+savepath = os.path.join(dirpath, 'CoWork', 'log', 'roc.jpg')
 features = [116, 55]
 
 
@@ -20,7 +31,6 @@ def svm(x_train, y_train, x_test, y_test):
 
 
 def RFEproc(x_train, y_train, x_test, y_test, features):
-
     selector = RFE(SVC(C=1, kernel='linear'), n_features_to_select=features)
     selector = selector.fit(x_train, y_train)
 
@@ -36,7 +46,6 @@ def RFEproc(x_train, y_train, x_test, y_test, features):
 
 
 def ModelInput(op):
-
     if (op == 'raw'):
         # 原始输入
         img = tf.keras.Input(shape=(6670))
@@ -54,7 +63,6 @@ def ModelInput(op):
 
 
 def DataInput(train_idx, test_idx, op):
-
     x1_train, x1_test = data1set[train_idx], data1set[test_idx]
     x2_train, x2_test = data2set[train_idx], data2set[test_idx]
     y_train, y_test = labels[train_idx], labels[test_idx]
@@ -85,7 +93,6 @@ def res(x):
 
 
 def mymodel(op):
-
     img_raw, itt_raw = ModelInput(op)
 
     if op == 'rfe':
@@ -120,13 +127,11 @@ def accuracy(y_pred, y_true):
 
 
 def train_model(op):
-
     # y_score = []
     # y_true = []
     accs = 0
     cnt = 0
     for train_idx, test_idx in KFold(n_splits=49).split(labels):
-
         x1_train, x2_train, x1_test, x2_test, y_train, y_test = DataInput(train_idx, test_idx, op)
         y_train = negtozero(y_train)
         y_test = negtozero(y_test)

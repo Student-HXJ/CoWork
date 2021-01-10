@@ -16,41 +16,61 @@ TEST_DIRECTORY = './China_PM25_T'
 LOGDIR_ROOT = './logdir'
 STARTED_DATESTRING = datetime.now()
 STEP = 12
+
+
 def get_arguments():
     parser = argparse.ArgumentParser(description='s2s network predict')
-    parser.add_argument(
-        '--checkpoint', type=str, help='Which model checkpoint to predict')
-    parser.add_argument('--data_dir', type=str, default=DATA_DIRECTORY,
+    parser.add_argument('--checkpoint',
+                        type=str,
+                        help='Which model checkpoint to predict')
+    parser.add_argument('--data_dir',
+                        type=str,
+                        default=DATA_DIRECTORY,
                         help='The directory of dataset.')
-    parser.add_argument('--test_dir', type=str, default=TEST_DIRECTORY,
+    parser.add_argument('--test_dir',
+                        type=str,
+                        default=TEST_DIRECTORY,
                         help='The directory of dataset.')
-    parser.add_argument('--cuda_device', type=int, default=CUDA_DEVICE,
+    parser.add_argument('--cuda_device',
+                        type=int,
+                        default=CUDA_DEVICE,
                         help='cuda device, -1 mean use cpu.')
-    parser.add_argument('--step', type=int, default=STEP,
+    parser.add_argument('--step',
+                        type=int,
+                        default=STEP,
                         help='The directory of dataset.')
-    parser.add_argument('--batch_size', type=int, default=1,
-                        help='The directory of dataset.')  
-    parser.add_argument('--img_size', type=int, default=50,
+    parser.add_argument('--batch_size',
+                        type=int,
+                        default=1,
                         help='The directory of dataset.')
-    parser.add_argument('--logdir_root', type=str, default=LOGDIR_ROOT,
+    parser.add_argument('--img_size',
+                        type=int,
+                        default=50,
+                        help='The directory of dataset.')
+    parser.add_argument('--logdir_root',
+                        type=str,
+                        default=LOGDIR_ROOT,
                         help='Root directory to place the logging '
                         'output and generated model. These are stored '
                         'under the dated subdirectory of --logdir_root. '
                         'Cannot use with --logdir.')
     return parser.parse_args()
 
+
 def load(path):
     print("Trying to restore saved checkpoints from {} ...".format(path))
     checkpoint = torch.load(path)
     return checkpoint
 
+
 def validate_directories(args):
     logdir_root = args.logdir_root
     if logdir_root is None:
         logdir_root = LOGDIR_ROOT
-    logdir_root = os.path.join(logdir_root, 'out', 
-                            "{0:%Y-%m-%dT%H-%M-%S}".format(STARTED_DATESTRING))
+    logdir_root = os.path.join(
+        logdir_root, 'out', "{0:%Y-%m-%dT%H-%M-%S}".format(STARTED_DATESTRING))
     return logdir_root
+
 
 def img_save(path, img, type_, step):
     if not os.path.exists(path):
@@ -60,6 +80,7 @@ def img_save(path, img, type_, step):
     sys.stdout.flush()
     img_ = Image.fromarray(img)
     img_.save(savepath)
+
 
 def main():
     print('start time is ', "{0:%Y-%m-%dT%H-%M-%S}".format(STARTED_DATESTRING))
@@ -72,23 +93,25 @@ def main():
     # get model
     model = Custom_Model()
     print(model)
-  
+
     # restore
     checkpoint = load(args.checkpoint)
     # dataset
-    dataset = TIFDataset(os.path.abspath(args.data_dir), 
-                         testpath=os.path.abspath(args.test_dir),               
-                                        step=args.step,
-                                        # scaler=checkpoint['scaler'],
-                                        img_size=args.img_size,
-                                        isTrain=False)
+    dataset = TIFDataset(
+        os.path.abspath(args.data_dir),
+        testpath=os.path.abspath(args.test_dir),
+        step=args.step,
+        # scaler=checkpoint['scaler'],
+        img_size=args.img_size,
+        isTrain=False)
     # pytorch dataloader
-    train_loader = torch.utils.data.DataLoader(dataset, 
-                            batch_size=args.batch_size, 
-                            shuffle=True, 
-                            # ,pin_memory=True
-                            )
-    
+    train_loader = torch.utils.data.DataLoader(
+        dataset,
+        batch_size=args.batch_size,
+        shuffle=True,
+        # ,pin_memory=True
+    )
+
     model.load_state_dict(checkpoint['net'])
     print('restore done...........')
     model.eval()
@@ -120,5 +143,7 @@ def main():
     end_time = datetime.now()
     print('end time is ', "{0:%Y-%m-%dT%H-%M-%S}".format(end_time))
     print('time used is ', end_time - STARTED_DATESTRING)
+
+
 if __name__ == '__main__':
     main()

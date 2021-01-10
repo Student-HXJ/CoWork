@@ -1,12 +1,15 @@
-import os
-import sys
-
-sys.path.append(os.getcwd())
-from datautils import *
+from sklearn.feature_selection import RFE, RFECV
+from sklearn.model_selection import KFold
+from matplotlib import pyplot as plt
+import numpy as np
+from sklearn.metrics import accuracy_score
+from joblib import Parallel, delayed
+import time
+from sklearn.svm import SVC
+from CoWork.datautils import getacc
 
 
 class RFEtrain:
-
     def __init__(self, dataset, labels):
 
         # model
@@ -70,8 +73,3 @@ class RFEtrain:
             acc = self.cross_validation(i)
             end = time.time()
             print("time: {:.2f}s, featurenum: {:d}, acc: {:.2f}".format(end - start, i, acc))
-
-
-if __name__ == "__main__":
-    RFEtrain(data1set, labels).useRFECV("./log/result1.jpg")
-    # plot_feature_acc("./log/result1.log", "./log/result1.jpg")
