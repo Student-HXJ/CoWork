@@ -2,7 +2,7 @@ import os
 import numpy as np
 import random
 import tensorflow as tf
-from CoWork.datautils import GPUs, negtozero
+from datautils import GPUs, negtozero
 from sklearn.svm import SVC
 from sklearn.feature_selection import RFE
 from sklearn.model_selection import KFold

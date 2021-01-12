@@ -6,7 +6,8 @@ from sklearn.metrics import accuracy_score
 from joblib import Parallel, delayed
 import time
 from sklearn.svm import SVC
-from CoWork.datautils import getacc
+from datautils import getacc, negtozero
+import os
 
 
 class RFEtrain:
@@ -22,15 +23,16 @@ class RFEtrain:
 
     def useRFECV(self, savepath):
 
-        rfecv = RFECV(estimator=self.model, step=1, cv=KFold(49), scoring='accuracy')
+        rfecv = RFECV(estimator=self.model, step=1, cv=KFold(75), scoring='accuracy')
         rfecv.fit(self.dataset, self.labels)
 
         plt.xlabel("number of features selected")
         plt.ylabel("Cross validation score")
         plt.plot(range(1, len(rfecv.grid_scores_) + 1), rfecv.grid_scores_)
         plt.savefig(savepath)
-        for i in range(len(rfecv.grid_scores_)):
-            print(i, rfecv.grid_scores_[i])
+
+        # for i in range(len(rfecv.grid_scores_)):
+        #     print(i, rfecv.grid_scores_[i])
 
     def RFEprocess(self, data, label, train_idx, test_idx, features):
         selector = RFE(self.model, n_features_to_select=features)
@@ -73,3 +75,13 @@ class RFEtrain:
             acc = self.cross_validation(i)
             end = time.time()
             print("time: {:.2f}s, featurenum: {:d}, acc: {:.2f}".format(end - start, i, acc))
+
+
+if __name__ == "__main__":
+    dirpath = os.getcwd()
+    datapath = os.path.join(dirpath, 'dataset', '75', 'data2.npy')
+    labelpath = os.path.join(dirpath, 'dataset', '75', 'label.npy')
+    dataset = np.load(datapath)
+    label = negtozero(np.load(labelpath))
+
+    RFEtrain(dataset, label).useRFECV('./test2.jpg')

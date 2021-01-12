@@ -1,5 +1,6 @@
 import re
 import os
+import csv
 import numpy as np
 import tensorflow as tf
 import matplotlib.pyplot as plt
@@ -105,3 +106,12 @@ def negtozero(labels):
         tmp.append(item)
     labels = np.array(tmp, dtype=int).reshape(-1)
     return labels
+
+
+def getdata(path):
+    with open(path, 'r') as f1:
+        reader = csv.reader(f1)
+        dataset = []
+        for data in reader:
+            dataset.append(data)
+    return dataset
