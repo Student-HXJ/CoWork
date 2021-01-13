@@ -10,16 +10,11 @@ from datautils import getacc, negtozero
 import os
 
 
-class RFEtrain:
+class RFECVtrain:
     def __init__(self, dataset, labels):
-
-        # model
-        self.model = SVC(C=1, kernel="linear")
-        # dataset
+        self.model = SVC(C=1, kernel='rfb')
         self.dataset = dataset
-        self.labels = labels
-        self.samples = dataset.shape[0]
-        self.features = dataset.shape[1]
+        self.label = labels
 
     def useRFECV(self, savepath):
 
@@ -31,8 +26,26 @@ class RFEtrain:
         plt.plot(range(1, len(rfecv.grid_scores_) + 1), rfecv.grid_scores_)
         plt.savefig(savepath)
 
-        # for i in range(len(rfecv.grid_scores_)):
-        #     print(i, rfecv.grid_scores_[i])
+        bestcnt = 0
+        bestscores = 0
+        for i in range(len(rfecv.grid_scores_)):
+            if rfecv.grid_scores_[i] > bestscores:
+                bestscores = rfecv.grid_scores_[i]
+                bestcnt = i + 1
+
+        print(bestcnt, bestscores)
+
+
+class RFEtrain:
+    def __init__(self, dataset, labels):
+
+        # model
+        self.model = SVC(C=1, kernel="linear")
+        # dataset
+        self.dataset = dataset
+        self.labels = labels
+        self.samples = dataset.shape[0]
+        self.features = dataset.shape[1]
 
     def RFEprocess(self, data, label, train_idx, test_idx, features):
         selector = RFE(self.model, n_features_to_select=features)
@@ -84,4 +97,4 @@ if __name__ == "__main__":
     dataset = np.load(datapath)
     label = negtozero(np.load(labelpath))
 
-    RFEtrain(dataset, label).useRFECV('./test2.jpg')
+    RFECVtrain(dataset, label).useRFECV('./test2.jpg')
