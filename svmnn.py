@@ -139,7 +139,6 @@ def train_model(op):
 
         # sparse_categorical_crossentropy  binary_crossentropy  hinge squared_hinge
         model.compile(loss='sparse_categorical_crossentropy', optimizer='adam', metrics=['accuracy'])
-        # 3000 - 65%
         model.fit(x=[x1_train, x2_train], y=y_train, epochs=3000, verbose=0)
 
         # # test

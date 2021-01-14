@@ -10,32 +10,6 @@ from datautils import getacc, negtozero
 import os
 
 
-class RFECVtrain:
-    def __init__(self, dataset, labels):
-        self.model = SVC(C=1, kernel='rfb')
-        self.dataset = dataset
-        self.label = labels
-
-    def useRFECV(self, savepath):
-
-        rfecv = RFECV(estimator=self.model, step=1, cv=KFold(75), scoring='accuracy')
-        rfecv.fit(self.dataset, self.labels)
-
-        plt.xlabel("number of features selected")
-        plt.ylabel("Cross validation score")
-        plt.plot(range(1, len(rfecv.grid_scores_) + 1), rfecv.grid_scores_)
-        plt.savefig(savepath)
-
-        bestcnt = 0
-        bestscores = 0
-        for i in range(len(rfecv.grid_scores_)):
-            if rfecv.grid_scores_[i] > bestscores:
-                bestscores = rfecv.grid_scores_[i]
-                bestcnt = i + 1
-
-        print(bestcnt, bestscores)
-
-
 class RFEtrain:
     def __init__(self, dataset, labels):
 
@@ -76,7 +50,7 @@ class RFEtrain:
             train_idx,
             test_idx,
             features,
-        ) for train_idx, test_idx in KFold(n_splits=self.samples).split(self.dataset))
+        ) for train_idx, test_idx in KFold(n_splits=self.samples).split(self.labels))
 
         acc = getacc(result)
         # getroc(result)
@@ -90,11 +64,41 @@ class RFEtrain:
             print("time: {:.2f}s, featurenum: {:d}, acc: {:.2f}".format(end - start, i, acc))
 
 
+class RFECVtrain:
+    def __init__(self, dataset, labels):
+        self.model = SVC(C=1, kernel='linear')
+        self.dataset = dataset
+        print(dataset.shape)
+        self.label = labels
+
+    def useRFECV(self, savepath):
+
+        rfecv = RFECV(estimator=self.model, step=1, cv=KFold(75), scoring='accuracy')
+        rfecv.fit(self.dataset, self.label)
+
+        plt.xlabel("number of features selected")
+        plt.ylabel("Cross validation score")
+        plt.plot(range(1, len(rfecv.grid_scores_) + 1), rfecv.grid_scores_)
+        plt.savefig(savepath)
+
+        bestcnt = 0
+        bestscores = 0
+        for i in range(len(rfecv.grid_scores_)):
+            if rfecv.grid_scores_[i] > bestscores:
+                bestscores = rfecv.grid_scores_[i]
+                bestcnt = i + 1
+
+        print(bestcnt, bestscores)
+
+
 if __name__ == "__main__":
     dirpath = os.getcwd()
-    datapath = os.path.join(dirpath, 'dataset', '75', 'data2.npy')
+    data1path = os.path.join(dirpath, 'dataset', '75', 'data1.npy')
+    data2path = os.path.join(dirpath, 'dataset', '75', 'data2.npy')
     labelpath = os.path.join(dirpath, 'dataset', '75', 'label.npy')
-    dataset = np.load(datapath)
+    data1 = np.load(data1path)
+    data2 = np.load(data2path)
     label = negtozero(np.load(labelpath))
 
-    RFECVtrain(dataset, label).useRFECV('./test2.jpg')
+    RFECVtrain(data1, label).useRFECV('./image/RFECVtrain_75_test1.jpg')
+    RFECVtrain(data2, label).useRFECV('./image/RFECVtrain_75_test2.jpg')

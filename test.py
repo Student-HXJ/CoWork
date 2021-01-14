@@ -1,3 +1,6 @@
-import os
-dirpath = os.getcwd()
-print(dirpath)
+
+a = '75f'
+
+ss = ''
+
+print(ss)

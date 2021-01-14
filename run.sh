@@ -2,12 +2,12 @@ cmd=$1
 
 if [ ${cmd} == "git" ]; then
     git add . && git commit -m ""$(date +%Y-%m-%d)"" && git push
-elif [ ${cmd} == "RFEtrain" ]; then
-    nohup python3 -u RFEtrain.py >./log/result1.log 2>&1 &
-elif [ ${cmd} == "test" ]; then
-    nohup python3 -u test.py >./log/test.log 2>&1 &
-elif [ ${cmd} == "svmnn" ]; then
-    nohup python3 -u svmnn.py >./log/rfe.log 2>&1 &
+elif [ ${cmd} == "rfe" ]; then
+    nohup python3 -u RFEtrain.py >./log/rferesult.log 2>&1 &
+elif [ ${cmd} == "knn" ]; then
+    nohup python3 -u KNNtrain.py >./log/knnresult.log 2>&1 &
+elif [ ${cmd} == "svm" ]; then
+    nohup python3 -u SVMtrain.py >./log/svmresult.log 2>&1 &
 else
     echo "No selection"
 fi

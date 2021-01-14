@@ -1,47 +1,41 @@
 import os
 import numpy as np
 import random
-from sklearn.svm import SVC
 from sklearn.model_selection import KFold, GridSearchCV
+from sklearn.neighbors import KNeighborsClassifier
 from sklearn.metrics import accuracy_score
 from datautils import plot_roc_auc
+from matplotlib import pyplot as plt
 
 
-class SVMtrain:
+class KNNtrain():
     def __init__(self, kinds):
-
+        # Grid Search
         self.param_grid = [{
-            "kernel": ['linear'],
-            'C': [1e-5, 1e-4, 1e-3, 1e-2, 0.1, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 20, 30],
+            "weights": ['uniform'],
+            'n_neighbors': [i for i in range(1, 11)],
         }, {
-            "kernel": ['poly'],
-            'C': [1e-5, 1e-4, 1e-3, 1e-2, 0.1, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 20, 30],
-            'gamma': ['scale', 'auto'],
-            'degree': [i for i in range(1, 11)],
-        }, {
-            "kernel": ['rbf'],
-            'C': [1e-5, 1e-4, 1e-3, 1e-2, 0.1, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 20, 30],
-            'gamma': ['scale', 'auto'],
-        }, {
-            "kernel": ['sigmoid'],
-            'C': [1e-5, 1e-4, 1e-3, 1e-2, 0.1, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 20, 30],
-            'gamma': ['scale', 'auto'],
+            'weights': ['distance'],
+            'n_neighbors': [i for i in range(1, 11)],
+            'p': [i for i in range(1, 6)],
         }]
 
         dirpath = os.getcwd()
         data1path = os.path.join(dirpath, 'dataset', kinds, 'data1.npy')
         data2path = os.path.join(dirpath, 'dataset', kinds, 'data2.npy')
         labelpath = os.path.join(dirpath, 'dataset', kinds, 'label.npy')
-        self.savepath = os.path.join(dirpath, 'image', kinds + '_svc.jpg')
+        self.savepath = os.path.join(dirpath, 'image', kinds + '_knn.jpg')
 
         data1 = np.load(data1path)
         data2 = np.load(data2path)
         self.label = np.load(labelpath)
 
-        self.svm = SVC()
+        self.knn = KNeighborsClassifier()
 
         self.trainproc(data1)
         self.trainproc(data2)
+
+        plt.cla()
 
     def trainproc(self, data):
 
@@ -49,13 +43,13 @@ class SVMtrain:
         cnt = 0
         y_label = []
         y_score = []
-        model = self._grid_search(self.svm, data)
+        model = self._grid_search(self.knn, data)
         for train_idx, test_idx in KFold(len(data)).split(self.label):
 
             random.shuffle(train_idx)
             model.fit(data[train_idx], self.label[train_idx])
             pred = model.predict(data[test_idx])
-            score = model.decision_function(data[test_idx])
+            score = model.predict_proba(data[test_idx])[:, 1]
             y_score.append(score)
             y_label.append(self.label[test_idx])
             acc += accuracy_score(self.label[test_idx], pred)
@@ -72,6 +66,6 @@ class SVMtrain:
 
 if __name__ == "__main__":
 
-    SVMtrain('75f')
-    SVMtrain('75')
-    SVMtrain('49')
+    KNNtrain('75f')
+    KNNtrain('75')
+    KNNtrain('49')
