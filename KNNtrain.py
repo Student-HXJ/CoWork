@@ -11,7 +11,7 @@ from matplotlib import pyplot as plt
 class KNNtrain():
     def __init__(self, kinds):
         # Grid Search
-        self.param_grid = [{
+        self.knn_param = [{
             "weights": ['uniform'],
             'n_neighbors': [i for i in range(1, 11)],
         }, {
@@ -59,7 +59,7 @@ class KNNtrain():
         plot_roc_auc(y_label, y_score, self.savepath)
 
     def _grid_search(self, model, data):
-        grid_search = GridSearchCV(model, self.param_grid, n_jobs=-1, cv=KFold(len(data)))
+        grid_search = GridSearchCV(model, self.knn_param, n_jobs=-1, cv=KFold(len(data)))
         grid_search.fit(data, self.label)
         return grid_search.best_estimator_
 

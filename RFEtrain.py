@@ -1,104 +1,115 @@
-from sklearn.feature_selection import RFE, RFECV
-from sklearn.model_selection import KFold
+from sklearn.feature_selection import RFECV
+from sklearn.model_selection import KFold, GridSearchCV
+from sklearn.metrics import accuracy_score
+from datautils import plot_roc_auc
 from matplotlib import pyplot as plt
 import numpy as np
-from sklearn.metrics import accuracy_score
-from joblib import Parallel, delayed
-import time
 from sklearn.svm import SVC
-from datautils import getacc, negtozero
 import os
+import random
 
 
 class RFEtrain:
-    def __init__(self, dataset, labels):
+    def __init__(self, kinds):
 
-        # model
-        self.model = SVC(C=1, kernel="linear")
-        # dataset
-        self.dataset = dataset
-        self.labels = labels
-        self.samples = dataset.shape[0]
-        self.features = dataset.shape[1]
+        self.svm_param = [{
+            "kernel": ['linear'],
+            'C': [1e-5, 1e-4, 1e-3, 1e-2, 0.1, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 20, 30],
+        }, {
+            "kernel": ['poly'],
+            'C': [1e-5, 1e-4, 1e-3, 1e-2, 0.1, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 20, 30],
+            'gamma': ['scale', 'auto'],
+            'degree': [i for i in range(1, 11)],
+        }, {
+            "kernel": ['rbf'],
+            'C': [1e-5, 1e-4, 1e-3, 1e-2, 0.1, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 20, 30],
+            'gamma': ['scale', 'auto'],
+        }, {
+            "kernel": ['sigmoid'],
+            'C': [1e-5, 1e-4, 1e-3, 1e-2, 0.1, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 20, 30],
+            'gamma': ['scale', 'auto'],
+        }]
 
-    def RFEprocess(self, data, label, train_idx, test_idx, features):
-        selector = RFE(self.model, n_features_to_select=features)
-        selector = selector.fit(data[train_idx], label[train_idx])
+        self.svm = SVC()
 
-        summary = np.zeros(sum(selector.support_)).tolist()
+        dirpath = os.getcwd()
+        data1path = os.path.join(dirpath, 'dataset', kinds, 'data1.npy')
+        data2path = os.path.join(dirpath, 'dataset', kinds, 'data2.npy')
+        labelpath = os.path.join(dirpath, 'dataset', kinds, 'label.npy')
+        self.savepath = os.path.join(dirpath, 'image', kinds + '_rfe.jpg')
+
+        data1 = np.load(data1path)
+        data2 = np.load(data2path)
+        self.label = np.load(labelpath)
+
+        print(data1.shape)
+        self.useRFECV(data1)
+        print(data2.shape)
+        self.useRFECV(data2)
+
+        plt.cla()
+
+    def useRFECV(self, data):
+
+        model = self._grid_search(data)
+        model_ = model
+
+        model = RFECV(estimator=model, step=1, cv=KFold(len(data)), scoring='accuracy', n_jobs=-1)
+
+        model.fit(data, self.label)
+        plt.xlabel("number of features selected")
+        plt.ylabel("Cross validation score")
+        plt.plot(range(1, len(model.grid_scores_) + 1), model.grid_scores_)
+        plt.savefig(self.savepath)
+        bestcnt = 0
+        bestscores = 0
+        for i in range(len(model.grid_scores_)):
+            if model.grid_scores_[i] > bestscores:
+                bestscores = model.grid_scores_[i]
+                bestcnt = i + 1
+                support_ = model.support_
+
+        print(bestcnt, bestscores)
+
+        self.RFEproc(data, model_, self.get_summary(support_))
+
+    def get_summary(self, support):
+
+        summary = np.zeros(sum(support)).tolist()
         j = 0
         k = 0
-        for i in selector.support_:
+        for i in support:
             j = j + 1
             if i:
                 summary[k] = j - 1
                 k = k + 1
+        return summary
 
-        self.model.fit(data[train_idx][:, summary], label[train_idx])
+    def RFEproc(self, data, model, summary):
 
-        pred = self.model.predict(data[test_idx][:, summary])
-        score = self.model.decision_function(data[test_idx][:, summary])
-        acc = accuracy_score(label[test_idx], pred)
+        acc = 0
+        cnt = 0
+        y_label = []
+        y_score = []
+        for train_idx, test_idx in KFold(len(data)).split(self.label):
+            random.shuffle(train_idx)
+            model.fit(data[train_idx][:, summary], self.label[train_idx])
+            pred = model.predict(data[test_idx][:, summary])
+            score = model.decision_function(data[test_idx][:, summary])
+            y_score.append(score)
+            y_label.append(self.label[test_idx])
+            acc += accuracy_score(self.label[test_idx], pred)
+            cnt += 1
+        print(data.shape, acc / cnt)
+        plot_roc_auc(y_label, y_score, self.savepath)
 
-        result = np.array([acc, score, label[test_idx]])
-        return result
-
-    def cross_validation(self, features):
-        result = Parallel(16)(delayed(self.RFEprocess)(
-            self.dataset,
-            self.labels,
-            train_idx,
-            test_idx,
-            features,
-        ) for train_idx, test_idx in KFold(n_splits=self.samples).split(self.labels))
-
-        acc = getacc(result)
-        # getroc(result)
-        return acc
-
-    def feature_select(self):
-        for i in range(100, self.features + 1, 5):
-            start = time.time()
-            acc = self.cross_validation(i)
-            end = time.time()
-            print("time: {:.2f}s, featurenum: {:d}, acc: {:.2f}".format(end - start, i, acc))
-
-
-class RFECVtrain:
-    def __init__(self, dataset, labels):
-        self.model = SVC(C=1, kernel='linear')
-        self.dataset = dataset
-        print(dataset.shape)
-        self.label = labels
-
-    def useRFECV(self, savepath):
-
-        rfecv = RFECV(estimator=self.model, step=1, cv=KFold(75), scoring='accuracy')
-        rfecv.fit(self.dataset, self.label)
-
-        plt.xlabel("number of features selected")
-        plt.ylabel("Cross validation score")
-        plt.plot(range(1, len(rfecv.grid_scores_) + 1), rfecv.grid_scores_)
-        plt.savefig(savepath)
-
-        bestcnt = 0
-        bestscores = 0
-        for i in range(len(rfecv.grid_scores_)):
-            if rfecv.grid_scores_[i] > bestscores:
-                bestscores = rfecv.grid_scores_[i]
-                bestcnt = i + 1
-
-        print(bestcnt, bestscores)
+    def _grid_search(self, data):
+        grid_search = GridSearchCV(self.svm, self.svm_param, n_jobs=-1, cv=KFold(len(data)))
+        grid_search.fit(data, self.label)
+        return grid_search.best_estimator_
 
 
 if __name__ == "__main__":
-    dirpath = os.getcwd()
-    data1path = os.path.join(dirpath, 'dataset', '75', 'data1.npy')
-    data2path = os.path.join(dirpath, 'dataset', '75', 'data2.npy')
-    labelpath = os.path.join(dirpath, 'dataset', '75', 'label.npy')
-    data1 = np.load(data1path)
-    data2 = np.load(data2path)
-    label = negtozero(np.load(labelpath))
-
-    RFECVtrain(data1, label).useRFECV('./image/RFECVtrain_75_test1.jpg')
-    RFECVtrain(data2, label).useRFECV('./image/RFECVtrain_75_test2.jpg')
+    # RFEtrain('75f')
+    RFEtrain('75')
+    # RFEtrain('49')
