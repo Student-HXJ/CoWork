@@ -11,23 +11,21 @@ from matplotlib import pyplot as plt
 class SVMtrain:
     def __init__(self, kinds):
 
-        self.svm_param = [{
-            "kernel": ['linear'],
-            'C': [1e-5, 1e-4, 1e-3, 1e-2, 0.1, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 20, 30],
-        }, {
-            "kernel": ['poly'],
-            'C': [1e-5, 1e-4, 1e-3, 1e-2, 0.1, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 20, 30],
-            'gamma': ['scale', 'auto'],
-            'degree': [i for i in range(1, 11)],
-        }, {
-            "kernel": ['rbf'],
-            'C': [1e-5, 1e-4, 1e-3, 1e-2, 0.1, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 20, 30],
-            'gamma': ['scale', 'auto'],
-        }, {
-            "kernel": ['sigmoid'],
-            'C': [1e-5, 1e-4, 1e-3, 1e-2, 0.1, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 20, 30],
-            'gamma': ['scale', 'auto'],
-        }]
+        self.svm_param = [
+            {
+                "kernel": ['linear', 'rbf', 'sigmoid'],
+                'gamma': ['scale', 'auto'],
+                'tol': [1e-6, 1e-5, 1e-4, 1e-3, 1e-2, 1e-1],
+                'C': [1e-5, 1e-4, 1e-3, 1e-2, 0.1, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 20, 30],
+            },
+            {
+                "kernel": ['poly'],
+                'gamma': ['scale', 'auto'],
+                'degree': [i for i in range(1, 11)],
+                'tol': [1e-6, 1e-5, 1e-4, 1e-3, 1e-2, 1e-1],
+                'C': [1e-5, 1e-4, 1e-3, 1e-2, 0.1, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 20, 30],
+            },
+        ]
 
         self.svm = SVC()
 
@@ -53,7 +51,7 @@ class SVMtrain:
         y_label = []
         y_score = []
         model = self._grid_search(data)
-        for train_idx, test_idx in KFold(len(data)).split(self.label):
+        for train_idx, test_idx in KFold(len(data), shuffle=True).split(data):
 
             random.shuffle(train_idx)
             model.fit(data[train_idx], self.label[train_idx])
@@ -68,7 +66,7 @@ class SVMtrain:
         plot_roc_auc(y_label, y_score, self.savepath)
 
     def _grid_search(self, data):
-        grid_search = GridSearchCV(self.svm, self.svm_param, n_jobs=-1, cv=KFold(len(data)))
+        grid_search = GridSearchCV(self.svm, self.svm_param, n_jobs=-1, cv=KFold(len(data), shuffle=True))
         grid_search.fit(data, self.label)
         return grid_search.best_estimator_
 

@@ -4,3 +4,5 @@ __pycache__/
 dataset/
 .vscode/
 hjyc/
+image/
+log/

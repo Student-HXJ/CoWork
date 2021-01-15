@@ -11,14 +11,10 @@ from matplotlib import pyplot as plt
 class KNNtrain():
     def __init__(self, kinds):
         # Grid Search
-        self.knn_param = [{
-            "weights": ['uniform'],
+        self.knn_param = {
+            "weights": ['uniform', 'distance'],
             'n_neighbors': [i for i in range(1, 11)],
-        }, {
-            'weights': ['distance'],
-            'n_neighbors': [i for i in range(1, 11)],
-            'p': [i for i in range(1, 6)],
-        }]
+        }
 
         dirpath = os.getcwd()
         data1path = os.path.join(dirpath, 'dataset', kinds, 'data1.npy')
@@ -44,7 +40,7 @@ class KNNtrain():
         y_label = []
         y_score = []
         model = self._grid_search(self.knn, data)
-        for train_idx, test_idx in KFold(len(data)).split(self.label):
+        for train_idx, test_idx in KFold(len(data), shuffle=True).split(self.label):
 
             random.shuffle(train_idx)
             model.fit(data[train_idx], self.label[train_idx])
@@ -59,7 +55,7 @@ class KNNtrain():
         plot_roc_auc(y_label, y_score, self.savepath)
 
     def _grid_search(self, model, data):
-        grid_search = GridSearchCV(model, self.knn_param, n_jobs=-1, cv=KFold(len(data)))
+        grid_search = GridSearchCV(model, self.knn_param, n_jobs=-1, cv=KFold(len(data), shuffle=True))
         grid_search.fit(data, self.label)
         return grid_search.best_estimator_
 
