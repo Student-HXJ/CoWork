@@ -1,6 +1,10 @@
+from datautils import get_data
+import os
 
-a = '75f'
+dirpath = os.getcwd()
+savepath = os.path.join(dirpath, 'dataset', '75n', 'data2.npy')
 
-ss = ''
-
-print(ss)
+data1, data2, label = get_data('75n')
+print(data1.shape)
+print(data2.shape)
+print(label.shape)

@@ -1,10 +1,8 @@
 import os
-import numpy as np
-import random
 from sklearn.svm import SVC
 from sklearn.model_selection import KFold, GridSearchCV
 from sklearn.metrics import accuracy_score
-from datautils import plot_roc_auc
+from datautils import plot_roc_auc, get_data
 from matplotlib import pyplot as plt
 
 
@@ -29,50 +27,42 @@ class SVMtrain:
 
         self.svm = SVC()
 
-        dirpath = os.getcwd()
-        data1path = os.path.join(dirpath, 'dataset', kinds, 'data1.npy')
-        data2path = os.path.join(dirpath, 'dataset', kinds, 'data2.npy')
-        labelpath = os.path.join(dirpath, 'dataset', kinds, 'label.npy')
-        self.savepath = os.path.join(dirpath, 'image', kinds + '_svc.jpg')
+        self.savepath = os.path.join(os.getcwd(), 'image', kinds + '_svc.jpg')
 
-        data1 = np.load(data1path)
-        data2 = np.load(data2path)
-        self.label = np.load(labelpath)
+        data1, data2, self.label = get_data(kinds)
 
         self.trainproc(data1)
         self.trainproc(data2)
 
-        plt.cla()
+        plt.close()
 
     def trainproc(self, data):
 
         acc = 0
-        cnt = 0
         y_label = []
         y_score = []
         model = self._grid_search(data)
         for train_idx, test_idx in KFold(len(data), shuffle=True).split(data):
 
-            random.shuffle(train_idx)
             model.fit(data[train_idx], self.label[train_idx])
             pred = model.predict(data[test_idx])
             score = model.decision_function(data[test_idx])
             y_score.append(score)
             y_label.append(self.label[test_idx])
             acc += accuracy_score(self.label[test_idx], pred)
-            cnt += 1
 
-        print(data.shape, acc / cnt)
+        print(data.shape, acc / len(data))
         plot_roc_auc(y_label, y_score, self.savepath)
 
     def _grid_search(self, data):
-        grid_search = GridSearchCV(self.svm, self.svm_param, n_jobs=-1, cv=KFold(len(data), shuffle=True))
+        grid_search = GridSearchCV(self.svm, self.svm_param, n_jobs=-1, cv=KFold(len(data)))
         grid_search.fit(data, self.label)
         return grid_search.best_estimator_
 
 
 if __name__ == "__main__":
 
-    SVMtrain('75f')
-    SVMtrain('75')
-    SVMtrain('49')
+    SVMtrain('75n')
+    # SVMtrain('75f')
+    # SVMtrain('75')
+    # SVMtrain('49')
