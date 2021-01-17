@@ -1,7 +1,6 @@
 import os
 from sklearn.svm import SVC
 from sklearn.model_selection import KFold, GridSearchCV
-from sklearn.metrics import accuracy_score
 from datautils import plot_roc_auc, get_data
 from matplotlib import pyplot as plt
 
@@ -45,11 +44,9 @@ class SVMtrain:
         for train_idx, test_idx in KFold(len(data), shuffle=True).split(data):
 
             model.fit(data[train_idx], self.label[train_idx])
-            pred = model.predict(data[test_idx])
-            score = model.decision_function(data[test_idx])
-            y_score.append(score)
+            acc += model.score(data[test_idx], self.label[test_idx])
+            y_score.append(model.decision_function(data[test_idx]))
             y_label.append(self.label[test_idx])
-            acc += accuracy_score(self.label[test_idx], pred)
 
         print(data.shape, acc / len(data))
         plot_roc_auc(y_label, y_score, self.savepath)
@@ -63,6 +60,6 @@ class SVMtrain:
 if __name__ == "__main__":
 
     SVMtrain('75n')
-    # SVMtrain('75f')
-    # SVMtrain('75')
-    # SVMtrain('49')
+    SVMtrain('75f')
+    SVMtrain('75')
+    SVMtrain('49')

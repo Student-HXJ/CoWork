@@ -1,7 +1,6 @@
 import os
 from sklearn.model_selection import KFold, GridSearchCV
 from sklearn.neighbors import KNeighborsClassifier
-from sklearn.metrics import accuracy_score
 from datautils import plot_roc_auc, get_data
 from matplotlib import pyplot as plt
 
@@ -34,11 +33,9 @@ class KNNtrain():
         for train_idx, test_idx in KFold(len(data), shuffle=True).split(data):
 
             model.fit(data[train_idx], self.label[train_idx])
-            pred = model.predict(data[test_idx])
-            score = model.predict_proba(data[test_idx])[:, 1]
-            y_score.append(score)
+            acc += model.score(data[test_idx], self.label[test_idx])
+            y_score.append(model.predict_proba(data[test_idx])[:, 1])
             y_label.append(self.label[test_idx])
-            acc += accuracy_score(self.label[test_idx], pred)
 
         print(data.shape, acc / len(data))
         plot_roc_auc(y_label, y_score, self.savepath)
@@ -52,6 +49,6 @@ class KNNtrain():
 if __name__ == "__main__":
 
     KNNtrain('75n')
-    # KNNtrain('75f')
-    # KNNtrain('75')
-    # KNNtrain('49')
+    KNNtrain('75f')
+    KNNtrain('75')
+    KNNtrain('49')

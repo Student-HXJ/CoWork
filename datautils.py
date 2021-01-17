@@ -5,6 +5,7 @@ import numpy as np
 import tensorflow as tf
 import matplotlib.pyplot as plt
 from sklearn.metrics import roc_curve, auc
+from sklearn.preprocessing import StandardScaler
 
 
 def noiseadd(signal):
@@ -147,3 +148,10 @@ def readcsv(path):
         for data in reader:
             dataset.append(data)
     return dataset
+
+
+def dataproc(X):
+    stand = StandardScaler()
+    stand.fit(X)
+    X_stand = stand.transform(X)
+    return X_stand

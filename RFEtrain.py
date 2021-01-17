@@ -1,6 +1,5 @@
 from sklearn.feature_selection import RFECV
 from sklearn.model_selection import KFold, GridSearchCV
-from sklearn.metrics import accuracy_score
 from datautils import plot_roc_auc, plot_feature_selected, get_data
 from matplotlib import pyplot as plt
 from sklearn.svm import SVC
@@ -55,18 +54,16 @@ class RFECVtrain:
     def trainproc(self, data, model):
 
         acc = 0
-        cnt = 0
         y_label = []
         y_score = []
         for train_idx, test_idx in KFold(len(data), shuffle=True).split(data):
+
             model.fit(data[train_idx], self.label[train_idx])
-            pred = model.predict(data[test_idx])
-            score = model.decision_function(data[test_idx])
-            y_score.append(score)
+            acc += model.score(data[test_idx], self.label[test_idx])
+            y_score.append(model.decision_function(data[test_idx]))
             y_label.append(self.label[test_idx])
-            acc += accuracy_score(self.label[test_idx], pred)
-            cnt += 1
-        print(data.shape, acc / cnt)
+
+        print(data.shape, acc / len(data))
         plot_roc_auc(y_label, y_score, self.cvSavepath)
 
     def _grid_search(self, data, label):
