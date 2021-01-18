@@ -1,5 +1,9 @@
 from sklearn.tree import DecisionTreeClassifier
-from sklearn.ensemble import BaggingClassifier, RandomForestClassifier
+from sklearn.ensemble import BaggingClassifier
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.ensemble import GradientBoostingClassifier
+
+dst = DecisionTreeClassifier()
 
 bg_clf = BaggingClassifier(
     DecisionTreeClassifier(),
@@ -13,3 +17,4 @@ bg_clf = BaggingClassifier(
 )
 
 rf_clf = RandomForestClassifier()
+gb_clf = GradientBoostingClassifier()
